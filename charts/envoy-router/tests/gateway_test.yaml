@@ -1,0 +1,52 @@
+suite: Gateway
+templates:
+  - templates/gateway.yaml
+release:
+  namespace: test-ns
+
+tests:
+  - it: is created by default
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Gateway
+
+  - it: is in release namespace
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: test-ns
+
+  - it: uses gateway.className
+    asserts:
+      - equal:
+          path: spec.gatewayClassName
+          value: envoy-router
+
+  - it: defaults allowedRoutes to Same
+    asserts:
+      - equal:
+          path: spec.listeners[0].allowedRoutes.namespaces.from
+          value: Same
+
+  - it: uses gateway.port for listener
+    asserts:
+      - equal:
+          path: spec.listeners[0].port
+          value: 80
+
+  - it: custom port is reflected in listener
+    set:
+      gateway.port: 8080
+    asserts:
+      - equal:
+          path: spec.listeners[0].port
+          value: 8080
+
+  - it: is not created when gateway.create is false
+    set:
+      gateway.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

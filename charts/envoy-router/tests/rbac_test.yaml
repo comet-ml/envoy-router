@@ -1,0 +1,66 @@
+suite: RBAC
+release:
+  namespace: test-ns
+
+tests:
+  - it: Role is namespace-scoped (not ClusterRole)
+    template: templates/role.yaml
+    asserts:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.namespace
+          value: test-ns
+
+  - it: RoleBinding is namespace-scoped (not ClusterRoleBinding)
+    template: templates/rolebinding.yaml
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.namespace
+          value: test-ns
+
+  - it: RoleBinding references Role not ClusterRole
+    template: templates/rolebinding.yaml
+    asserts:
+      - equal:
+          path: roleRef.kind
+          value: Role
+
+  - it: RoleBinding subject namespace matches release namespace
+    template: templates/rolebinding.yaml
+    asserts:
+      - equal:
+          path: subjects[0].namespace
+          value: test-ns
+
+  - it: Role grants required verbs on pods
+    template: templates/role.yaml
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resources: ["pods"]
+            verbs: ["get", "list", "watch", "update", "patch"]
+
+  - it: Role grants full CRUD on httproutes
+    template: templates/role.yaml
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: ["gateway.networking.k8s.io"]
+            resources: ["httproutes"]
+            verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  - it: Role grants full CRUD on services and endpoints
+    template: templates/role.yaml
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resources: ["services", "endpoints"]
+            verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

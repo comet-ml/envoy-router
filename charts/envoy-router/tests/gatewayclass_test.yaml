@@ -1,0 +1,38 @@
+suite: GatewayClass
+templates:
+  - templates/gatewayclass.yaml
+release:
+  namespace: test-ns
+
+tests:
+  - it: is created by default
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: GatewayClass
+
+  - it: references the Envoy Gateway controller
+    asserts:
+      - equal:
+          path: spec.controllerName
+          value: gateway.envoyproxy.io/gatewayclass-controller
+
+  - it: has helm keep annotation to survive namespace uninstall
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+
+  - it: uses gateway.className as name
+    asserts:
+      - equal:
+          path: metadata.name
+          value: envoy-router
+
+  - it: is not created when gateway.createClass is false
+    set:
+      gateway.createClass: false
+    asserts:
+      - hasDocuments:
+          count: 0

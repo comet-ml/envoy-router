@@ -10,8 +10,30 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    name: Lint and unit test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Helm
+        run: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Install helm-unittest plugin
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest
+
+      - name: Lint
+        run: helm lint charts/envoy-router
+
+      - name: Unit tests
+        run: helm unittest charts/envoy-router
+
   oci:
     name: Publish to GHCR (OCI)
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

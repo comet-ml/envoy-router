@@ -4,7 +4,7 @@ ENVOY_GATEWAY_VERSION ?= v1.7.1
 CHART_NAMESPACE ?= envoy-router
 
 .PHONY: build test lint tidy docker-build docker-push \
-        envoy-gateway-install install upgrade uninstall
+        envoy-gateway-install install upgrade uninstall helm-test helm-lint
 
 build:
 	go build -o bin/manager ./cmd/main.go
@@ -23,6 +23,12 @@ docker-build:
 
 docker-push: docker-build
 	docker push $(IMAGE_REPO):$(IMAGE_TAG)
+
+helm-lint:
+	helm lint charts/envoy-router
+
+helm-test:
+	helm unittest charts/envoy-router
 
 ## Install Envoy Gateway CRDs and controller (prerequisite)
 envoy-gateway-install:

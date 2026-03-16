@@ -1,0 +1,60 @@
+suite: Deployment
+templates:
+  - templates/deployment.yaml
+release:
+  namespace: test-ns
+
+tests:
+  - it: is in release namespace
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: test-ns
+
+  - it: uses appVersion as image tag when image.tag is empty
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/comet-ml/envoy-router:0.1.0
+
+  - it: uses custom image tag when set
+    set:
+      image.tag: v1.2.3
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/comet-ml/envoy-router:v1.2.3
+
+  - it: sets --gateway-namespace to release namespace
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --gateway-namespace=test-ns
+
+  - it: sets --watch-namespace to release namespace
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --watch-namespace=test-ns
+
+  - it: sets --pod-port from values
+    set:
+      operator.podPort: 9090
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --pod-port=9090
+
+  - it: sets --gateway-name from values
+    set:
+      operator.gatewayName: my-gateway
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --gateway-name=my-gateway
+
+  - it: uses the correct service account
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: RELEASE-NAME-envoy-router
