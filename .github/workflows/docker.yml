@@ -145,7 +145,7 @@ jobs:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.manifest.outputs.digest }}
           predicate-type: https://spdx.dev/Document
-          predicate: sbom.spdx.json
+          predicate-path: sbom.spdx.json
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
