@@ -1,0 +1,6 @@
+dependencies:
+- name: envoy-router
+  repository: file://../envoy-router
+  version: 0.1.0
+digest: sha256:a253a3abd12fba89d9c930f234e0cc13a62ff2a516a691ae69b38d75e2f4a9b0
+generated: "2026-03-16T17:59:58.781723098+01:00"

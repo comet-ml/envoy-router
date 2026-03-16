@@ -1,0 +1,14 @@
+envoy-router-test installed in namespace {{ .Release.Namespace }}.
+
+Wait for pods to be ready:
+  kubectl wait pod -l envoy-router/enabled=true -n {{ .Release.Namespace }} --for=condition=Ready --timeout=60s
+
+Test each pod through the ingress:
+{{- range .Values.pods }}
+  curl http://{{ $.Values.ingress.host }}/pp-{{ .name }}/
+{{- end }}
+
+Expected responses:
+{{- range .Values.pods }}
+  /pp-{{ .name }}/ → "hello from pp-{{ .name }}"
+{{- end }}

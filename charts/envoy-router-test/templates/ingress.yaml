@@ -1,4 +1,4 @@
-{{- if .Values.ingress.gatewayService }}
+{{- $gwPort := index .Values "envoy-router" "gateway" "port" | int }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -18,11 +18,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: {{ .Values.ingress.gatewayService }}
+            name: envoy-proxy
             port:
-              number: {{ .Values.ingress.gatewayServicePort }}
-{{- else }}
-# Ingress not created — set ingress.gatewayService to enable it.
-# Discover the Envoy Gateway service name with:
-#   kubectl get svc -n {{ .Release.Namespace }} -l gateway.envoyproxy.io/owning-gateway-name=envoy-router
-{{- end }}
+              number: {{ $gwPort }}

@@ -1,4 +1,4 @@
-# Test pods to create. Each becomes a pp-<name> pod routable at /<name>.
+# Test pods to create. Each becomes pp-<name>, routable at /<name>.
 pods:
   - name: aaa
   - name: bbb
@@ -9,15 +9,23 @@ image:
   repository: hashicorp/http-echo
   tag: latest
 
-# Port the echo server listens on — must match envoy-router operator.podPort
-podPort: 8080
-
-# Ingress — internal ALB forwarding the test domain to the Envoy Gateway service
+# Ingress — internal ALB forwarding the test domain to the Envoy proxy
 ingress:
   host: test-pp.dev.comet.com
 
-  # Envoy Gateway generates a Service per Gateway.
-  # Discover it with: kubectl get svc -n <namespace> -l gateway.envoyproxy.io/owning-gateway-name=envoy-router
-  # Then set this to the generated service name.
-  gatewayService: ""
-  gatewayServicePort: 80
+# envoy-router subchart values
+envoy-router:
+  image:
+    repository: ghcr.io/comet-ml/envoy-router
+    tag: ""
+  gateway:
+    createClass: true
+    create: true
+    className: envoy-router
+    name: envoy-router
+    port: 80
+    allowedRouteNamespaces: Same
+  operator:
+    gatewayName: envoy-router
+    servicePort: 80
+    podPort: 8080
