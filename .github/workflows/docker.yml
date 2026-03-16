@@ -135,20 +135,17 @@ jobs:
           echo "digest=$(crane digest "${primary_tag}")" >> "$GITHUB_OUTPUT"
 
       - name: Generate SBOM
-        uses: anchore/sbom-action@v0.23.1
-        with:
-          path: .
-          output-file: sbom.spdx.json
-          format: spdx-json
-          upload-artifact: false
-          upload-release-assets: false
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          syft . -o spdx-json=sbom.spdx.json
 
       - name: Attest SBOM
-        uses: actions/attest-sbom@v4
+        uses: actions/attest@v4
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.manifest.outputs.digest }}
-          sbom-path: sbom.spdx.json
+          predicate-type: https://spdx.dev/Document
+          predicate: sbom.spdx.json
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
