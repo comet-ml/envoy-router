@@ -1,0 +1,36 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/comet-ml/envoy-router
+  tag: latest
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  name: ""
+
+# Gateway API resources created by this chart
+gateway:
+  # Set false if you manage GatewayClass/Gateway yourself
+  create: true
+  className: envoy-router
+  name: envoy-router
+  # Defaults to .Release.Namespace when empty
+  namespace: ""
+  port: 80
+  # Namespaces allowed to attach HTTPRoutes: All | Same | Selector
+  allowedRouteNamespaces: All
+
+operator:
+  gatewayName: envoy-router
+  # Defaults to .Release.Namespace when empty
+  gatewayNamespace: ""
+  servicePort: 80
+  podPort: 8080
+  # Empty = watch all namespaces
+  watchNamespace: ""
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
