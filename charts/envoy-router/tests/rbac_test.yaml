@@ -55,12 +55,22 @@ tests:
             resources: ["httproutes"]
             verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  - it: Role grants full CRUD on services and endpoints
+  - it: Role grants full CRUD on services
     template: templates/role.yaml
     asserts:
       - contains:
           path: rules
           content:
             apiGroups: [""]
-            resources: ["services", "endpoints"]
+            resources: ["services"]
+            verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  - it: Role grants full CRUD on endpointslices
+    template: templates/role.yaml
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: ["discovery.k8s.io"]
+            resources: ["endpointslices"]
             verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

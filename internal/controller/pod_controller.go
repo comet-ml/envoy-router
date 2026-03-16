@@ -4,6 +4,7 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,7 +26,7 @@ const (
 )
 
 // PodReconciler reconciles Pods labelled with envoy-router/enabled=true.
-// For each such pod it maintains a selector-less Service, an Endpoints object,
+// For each such pod it maintains a selector-less Service, an EndpointSlice,
 // and an HTTPRoute that maps /<pod-name> to the pod's IP.
 type PodReconciler struct {
 	client.Client
@@ -53,15 +54,17 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			if err := r.cleanup(ctx, pod); err != nil {
 				return ctrl.Result{}, err
 			}
+			patch := client.MergeFrom(pod.DeepCopy())
 			controllerutil.RemoveFinalizer(pod, finalizerName)
-			return ctrl.Result{}, r.Update(ctx, pod)
+			return ctrl.Result{}, r.Patch(ctx, pod, patch)
 		}
 		return ctrl.Result{}, nil
 	}
 
 	if !controllerutil.ContainsFinalizer(pod, finalizerName) {
+		patch := client.MergeFrom(pod.DeepCopy())
 		controllerutil.AddFinalizer(pod, finalizerName)
-		if err := r.Update(ctx, pod); err != nil {
+		if err := r.Patch(ctx, pod, patch); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -74,7 +77,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err := r.ensureService(ctx, pod); err != nil {
 		return ctrl.Result{}, err
 	}
-	if err := r.ensureEndpoints(ctx, pod); err != nil {
+	if err := r.ensureEndpointSlice(ctx, pod); err != nil {
 		return ctrl.Result{}, err
 	}
 	if err := r.ensureHTTPRoute(ctx, pod); err != nil {
@@ -94,9 +97,9 @@ func (r *PodReconciler) cleanup(ctx context.Context, pod *corev1.Pod) error {
 		}
 	}
 
-	ep := &corev1.Endpoints{}
-	if err := r.Get(ctx, nn, ep); err == nil {
-		if err := r.Delete(ctx, ep); err != nil && !errors.IsNotFound(err) {
+	eps := &discoveryv1.EndpointSlice{}
+	if err := r.Get(ctx, nn, eps); err == nil {
+		if err := r.Delete(ctx, eps); err != nil && !errors.IsNotFound(err) {
 			return err
 		}
 	}
@@ -142,22 +145,34 @@ func (r *PodReconciler) ensureService(ctx context.Context, pod *corev1.Pod) erro
 	return r.Update(ctx, existing)
 }
 
-func (r *PodReconciler) ensureEndpoints(ctx context.Context, pod *corev1.Pod) error {
-	desired := &corev1.Endpoints{
+func (r *PodReconciler) ensureEndpointSlice(ctx context.Context, pod *corev1.Pod) error {
+	ready := true
+	port := r.PodPort
+	protocol := corev1.ProtocolTCP
+	addrType := discoveryv1.AddressTypeIPv4
+
+	desired := &discoveryv1.EndpointSlice{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pod.Name,
 			Namespace: pod.Namespace,
-			Labels:    map[string]string{managedByLabel: managedByValue},
-		},
-		Subsets: []corev1.EndpointSubset{
-			{
-				Addresses: []corev1.EndpointAddress{{IP: pod.Status.PodIP}},
-				Ports:     []corev1.EndpointPort{{Port: r.PodPort, Protocol: corev1.ProtocolTCP}},
+			Labels: map[string]string{
+				managedByLabel:                   managedByValue,
+				discoveryv1.LabelServiceName:     pod.Name,
 			},
+		},
+		AddressType: addrType,
+		Endpoints: []discoveryv1.Endpoint{
+			{
+				Addresses:  []string{pod.Status.PodIP},
+				Conditions: discoveryv1.EndpointConditions{Ready: &ready},
+			},
+		},
+		Ports: []discoveryv1.EndpointPort{
+			{Port: &port, Protocol: &protocol},
 		},
 	}
 
-	existing := &corev1.Endpoints{}
+	existing := &discoveryv1.EndpointSlice{}
 	err := r.Get(ctx, types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, existing)
 	if errors.IsNotFound(err) {
 		return r.Create(ctx, desired)
@@ -165,7 +180,8 @@ func (r *PodReconciler) ensureEndpoints(ctx context.Context, pod *corev1.Pod) er
 	if err != nil {
 		return err
 	}
-	existing.Subsets = desired.Subsets
+	existing.Endpoints = desired.Endpoints
+	existing.Ports = desired.Ports
 	return r.Update(ctx, existing)
 }
 
