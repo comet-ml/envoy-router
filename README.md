@@ -37,11 +37,12 @@ helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
   --version 0.1.0 --namespace ns-1 --create-namespace
 ```
 
-For multiple namespaces, repeat:
+For multiple namespaces, the `GatewayClass` only needs to be created once (it is cluster-scoped). Set `gateway.createClass=false` for subsequent installs:
 
 ```bash
 helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
-  --version 0.1.0 --namespace ns-2 --create-namespace
+  --version 0.1.0 --namespace ns-2 --create-namespace \
+  --set gateway.createClass=false
 ```
 
 ```
@@ -69,7 +70,8 @@ The pod will be reachable at `https://your-domain.com/<pod-name>/` within second
 |---|---|---|
 | `operator.podPort` | `8080` | Port the pods listen on |
 | `gateway.create` | `true` | Set `false` to skip Gateway creation |
-| `gateway.className` | `eg` | GatewayClass (Envoy Gateway installs `eg` by default) |
+| `gateway.createClass` | `true` | Create the GatewayClass (cluster-scoped — set `false` for 2nd+ namespace installs) |
+| `gateway.className` | `envoy-router` | GatewayClass name |
 | `gateway.port` | `80` | Listener port on the Gateway |
 
 ## Development

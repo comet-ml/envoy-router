@@ -1,0 +1,14 @@
+{{- if .Values.gateway.createClass -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: {{ .Values.gateway.className }}
+  labels:
+    app.kubernetes.io/name: {{ include "envoy-router.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    # keep prevents deletion when this namespace's release is uninstalled
+    helm.sh/resource-policy: keep
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+{{- end }}

@@ -12,8 +12,10 @@ serviceAccount:
 # Gateway resource created in the same namespace as the operator.
 # Uses the "eg" GatewayClass that Envoy Gateway installs automatically.
 gateway:
+  # createClass: create the GatewayClass (cluster-scoped, only needed once per cluster)
+  createClass: true
   create: true
-  className: eg
+  className: envoy-router
   name: envoy-router
   port: 80
   # Same: only HTTPRoutes from this namespace attach (per-namespace model)
