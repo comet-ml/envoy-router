@@ -1,0 +1,26 @@
+# Go
+bin/
+manager
+
+# Test binaries
+*.test
+*.out
+
+# Dependency directories
+vendor/
+
+# Build artifacts
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Helm - generated dependency artifacts
+charts/envoy-router-test/charts/
+charts/envoy-router-test/Chart.lock

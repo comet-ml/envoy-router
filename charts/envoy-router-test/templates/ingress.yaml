@@ -2,14 +2,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: envoy-router-test
-  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}
+  namespace: envoy-gateway-system
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internal
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
 spec:
+  ingressClassName: alb
   rules:
   - host: {{ .Values.ingress.host }}
     http:
@@ -18,6 +18,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: envoy-proxy
+            name: {{ .Release.Name }}-envoy-proxy
             port:
               number: {{ $gwPort }}

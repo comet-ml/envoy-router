@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -14,9 +15,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
+
+var (
+	managedPods = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "envoy_router",
+		Name:      "managed_pods",
+		Help:      "Number of pods currently managed by envoy-router (have the finalizer).",
+	})
+)
+
+func init() {
+	metrics.Registry.MustRegister(managedPods)
+}
 
 const (
 	managedByLabel = "app.kubernetes.io/managed-by"
@@ -56,6 +70,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			}
 			patch := client.MergeFrom(pod.DeepCopy())
 			controllerutil.RemoveFinalizer(pod, finalizerName)
+			managedPods.Dec()
 			return ctrl.Result{}, r.Patch(ctx, pod, patch)
 		}
 		return ctrl.Result{}, nil
@@ -67,6 +82,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		if err := r.Patch(ctx, pod, patch); err != nil {
 			return ctrl.Result{}, err
 		}
+		managedPods.Inc()
 	}
 
 	if pod.Status.PodIP == "" {

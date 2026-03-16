@@ -1,15 +1,15 @@
 {{- $gwName := index .Values "envoy-router" "gateway" "name" }}
 {{- $gwPort := index .Values "envoy-router" "gateway" "port" | int }}
-# Stable Service that selects the Envoy proxy pods created by Envoy Gateway
-# for our Gateway resource. Used as the ALB Ingress backend.
-# Envoy Gateway labels proxy pods with owning-gateway-name/namespace.
+# Service in envoy-gateway-system that selects the Envoy proxy pods.
+# Envoy Gateway runs proxy pods in envoy-gateway-system; a Service can only
+# select pods in its own namespace, so this must live here.
 apiVersion: v1
 kind: Service
 metadata:
-  name: envoy-proxy
-  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}-envoy-proxy
+  namespace: envoy-gateway-system
   labels:
-    app.kubernetes.io/managed-by: envoy-router-test
+    app.kubernetes.io/managed-by: {{ .Release.Name }}
 spec:
   selector:
     gateway.envoyproxy.io/owning-gateway-name: {{ $gwName }}

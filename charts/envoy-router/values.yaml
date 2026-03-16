@@ -26,6 +26,14 @@ operator:
   servicePort: 80
   podPort: 8080
 
+metrics:
+  serviceMonitor:
+    enabled: false
+    # namespace: monitoring  # defaults to release namespace
+    interval: 30s
+    scrapeTimeout: 10s
+    additionalLabels: {}
+
 resources: {}
 nodeSelector: {}
 tolerations: []

@@ -13,8 +13,8 @@ spec:
   - name: http-echo
     image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
     args:
-      - -listen=:{{ $.Values.podPort }}
-      - -text=hello from pp-{{ .name }}
+      - "-listen=:{{ $.Values.podPort }}"
+      - "-text=hello from pp-{{ .name }} ns: {{ $.Release.Namespace }}"
     ports:
     - containerPort: {{ $.Values.podPort }}
     readinessProbe:

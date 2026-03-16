@@ -4,6 +4,9 @@ pods:
   - name: bbb
   - name: ccc
 
+# Port the test pods listen on
+podPort: 8080
+
 # HTTP echo image — responds with the pod name
 image:
   repository: hashicorp/http-echo
