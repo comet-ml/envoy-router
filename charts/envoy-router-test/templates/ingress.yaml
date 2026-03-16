@@ -1,0 +1,28 @@
+{{- if .Values.ingress.gatewayService }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: envoy-router-test
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+spec:
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.ingress.gatewayService }}
+            port:
+              number: {{ .Values.ingress.gatewayServicePort }}
+{{- else }}
+# Ingress not created — set ingress.gatewayService to enable it.
+# Discover the Envoy Gateway service name with:
+#   kubectl get svc -n {{ .Release.Namespace }} -l gateway.envoyproxy.io/owning-gateway-name=envoy-router
+{{- end }}

@@ -1,0 +1,26 @@
+{{- range .Values.pods }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pp-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    envoy-router/enabled: "true"
+    app.kubernetes.io/managed-by: envoy-router-test
+spec:
+  containers:
+  - name: http-echo
+    image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+    args:
+      - -listen=:{{ $.Values.podPort }}
+      - -text=hello from pp-{{ .name }}
+    ports:
+    - containerPort: {{ $.Values.podPort }}
+    readinessProbe:
+      httpGet:
+        path: /
+        port: {{ $.Values.podPort }}
+      initialDelaySeconds: 2
+      periodSeconds: 5
+{{- end }}

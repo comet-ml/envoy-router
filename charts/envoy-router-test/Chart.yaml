@@ -1,0 +1,5 @@
+apiVersion: v2
+name: envoy-router-test
+description: Test chart — creates pp-* pods and an internal ALB Ingress to validate envoy-router routing
+type: application
+version: 0.1.0
