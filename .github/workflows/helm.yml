@@ -20,7 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: azure/setup-helm@v4
+      - name: Install Helm
+        run: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
       - uses: docker/login-action@v4
         with:
