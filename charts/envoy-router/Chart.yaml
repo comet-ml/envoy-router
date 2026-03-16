@@ -3,4 +3,4 @@ name: envoy-router
 description: Operator that dynamically manages HTTPRoutes for labelled pods via Envoy Gateway
 type: application
 version: 0.1.0
-appVersion: "latest"
+appVersion: "0.1.0"
