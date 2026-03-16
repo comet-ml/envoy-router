@@ -25,7 +25,7 @@ Resources are cleaned up automatically when pods are deleted.
 
 ```bash
 helm install eg oci://docker.io/envoyproxy/gateway-helm \
-  --version v1.2.0 -n envoy-gateway-system --create-namespace
+  --version v1.7.1 -n envoy-gateway-system --create-namespace
 ```
 
 ## Install

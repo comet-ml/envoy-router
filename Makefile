@@ -1,6 +1,6 @@
 IMAGE_REPO ?= ghcr.io/comet-ml/envoy-router
 IMAGE_TAG  ?= latest
-ENVOY_GATEWAY_VERSION ?= v1.2.0
+ENVOY_GATEWAY_VERSION ?= v1.7.1
 CHART_NAMESPACE ?= envoy-router
 
 .PHONY: build test lint tidy docker-build docker-push \

@@ -94,4 +94,4 @@ To release a new version: `git tag vX.Y.Z && git push --tags`
 - Go 1.23 / toolchain 1.24
 - controller-runtime v0.20.x (k8s v0.32.x)
 - sigs.k8s.io/gateway-api v1.2.0
-- Envoy Gateway v1.2.0
+- Envoy Gateway v1.7.1
