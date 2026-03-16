@@ -22,11 +22,3 @@
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
-
-{{- define "envoy-router.gatewayNamespace" -}}
-{{- default .Release.Namespace .Values.gateway.namespace }}
-{{- end }}
-
-{{- define "envoy-router.operatorGatewayNamespace" -}}
-{{- default .Release.Namespace .Values.operator.gatewayNamespace }}
-{{- end }}

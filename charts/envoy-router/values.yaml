@@ -9,26 +9,20 @@ serviceAccount:
   create: true
   name: ""
 
-# Gateway API resources created by this chart
+# Gateway resource created in the same namespace as the operator.
+# Uses the "eg" GatewayClass that Envoy Gateway installs automatically.
 gateway:
-  # Set false if you manage GatewayClass/Gateway yourself
   create: true
-  className: envoy-router
+  className: eg
   name: envoy-router
-  # Defaults to .Release.Namespace when empty
-  namespace: ""
   port: 80
-  # Namespaces allowed to attach HTTPRoutes: All | Same | Selector
-  allowedRouteNamespaces: All
+  # Same: only HTTPRoutes from this namespace attach (per-namespace model)
+  allowedRouteNamespaces: Same
 
 operator:
   gatewayName: envoy-router
-  # Defaults to .Release.Namespace when empty
-  gatewayNamespace: ""
   servicePort: 80
   podPort: 8080
-  # Empty = watch all namespaces
-  watchNamespace: ""
 
 resources: {}
 nodeSelector: {}

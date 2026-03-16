@@ -25,12 +25,10 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
         - --gateway-name={{ .Values.operator.gatewayName }}
-        - --gateway-namespace={{ include "envoy-router.operatorGatewayNamespace" . }}
+        - --gateway-namespace={{ .Release.Namespace }}
         - --service-port={{ .Values.operator.servicePort }}
         - --pod-port={{ .Values.operator.podPort }}
-        {{- if .Values.operator.watchNamespace }}
-        - --watch-namespace={{ .Values.operator.watchNamespace }}
-        {{- end }}
+        - --watch-namespace={{ .Release.Namespace }}
         ports:
         - name: metrics
           containerPort: 8080

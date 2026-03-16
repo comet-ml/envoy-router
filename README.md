@@ -30,14 +30,15 @@ helm install eg oci://docker.io/envoyproxy/gateway-helm \
 
 ## Install
 
+Run once per namespace. Each install is fully self-contained — operator + Gateway scoped to that namespace:
+
 ```bash
-# Install the operator + GatewayClass + Gateway from GHCR
 helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
   --version 0.1.0 \
-  --namespace envoy-router --create-namespace
+  --namespace ns-1 --create-namespace
 ```
 
-This installs the operator, a `GatewayClass`, and a `Gateway` in the `envoy-router` namespace.
+The operator watches only its own namespace and attaches HTTPRoutes to the Gateway in the same namespace.
 
 ## Making a pod routable
 
@@ -58,43 +59,28 @@ Key Helm values:
 | Value | Default | Description |
 |---|---|---|
 | `operator.podPort` | `8080` | Port the pods listen on |
-| `operator.watchNamespace` | `""` | Restrict to one namespace (empty = all) |
-| `gateway.allowedRouteNamespaces` | `All` | Namespaces that can attach HTTPRoutes |
-| `gateway.create` | `true` | Set `false` to bring your own Gateway |
+| `gateway.create` | `true` | Set `false` to skip Gateway creation |
+| `gateway.className` | `eg` | GatewayClass name (Envoy Gateway installs `eg` by default) |
+| `gateway.port` | `80` | Listener port on the Gateway |
 
 ## Multi-namespace setup
 
-If you have multiple namespaces each with their own ALB, deploy one `Gateway` per namespace. A single Envoy Gateway controller and a single operator instance serve the whole cluster.
+Each namespace is fully independent — just repeat the install:
+
+```bash
+helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
+  --version 0.1.0 --namespace ns-1 --create-namespace
+
+helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
+  --version 0.1.0 --namespace ns-2 --create-namespace
+```
 
 ```
 ns-1:  ALB-1 → Gateway (ns-1) → HTTPRoutes for pp-* in ns-1
 ns-2:  ALB-2 → Gateway (ns-2) → HTTPRoutes for pp-* in ns-2
 ```
 
-**ALB configuration:** each ALB needs only one rule — forward `/*` to the Envoy Gateway service in that namespace. No per-pod rules.
-
-**Install the operator once** (cluster-wide, no Gateway):
-
-```bash
-helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
-  --version 0.1.0 \
-  --namespace envoy-router --create-namespace \
-  --set gateway.create=false \
-  --set operator.watchNamespace=""
-```
-
-**Install a Gateway in each namespace:**
-
-```bash
-helm install envoy-router-gateway oci://ghcr.io/comet-ml/charts/envoy-router \
-  --version 0.1.0 \
-  --namespace ns-1 --create-namespace \
-  --set gateway.create=true \
-  --set gateway.allowedRouteNamespaces=Same \
-  --set operator.watchNamespace=ns-1   # disable second operator — only one needed
-```
-
-> The operator uses the pod's namespace to find the local Gateway when `--gateway-namespace` is empty, so HTTPRoutes in `ns-1` attach to the Gateway in `ns-1` automatically.
+**ALB configuration:** one rule per ALB — forward `/*` to the Envoy Gateway service in that namespace. No per-pod rules needed.
 
 ## Development
 
