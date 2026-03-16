@@ -24,8 +24,6 @@ Resources are cleaned up automatically when pods are deleted.
 - Envoy Gateway installed:
 
 ```bash
-make envoy-gateway-install
-# or manually:
 helm install eg oci://docker.io/envoyproxy/gateway-helm \
   --version v1.2.0 -n envoy-gateway-system --create-namespace
 ```
@@ -33,12 +31,10 @@ helm install eg oci://docker.io/envoyproxy/gateway-helm \
 ## Install
 
 ```bash
-make install
-# or:
-helm install envoy-router ./charts/envoy-router \
-  --namespace envoy-router --create-namespace \
-  --set image.repository=ghcr.io/comet-ml/envoy-router \
-  --set image.tag=latest
+# Install the operator + GatewayClass + Gateway from GHCR
+helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
+  --version 0.1.0 \
+  --namespace envoy-router --create-namespace
 ```
 
 This installs the operator, a `GatewayClass`, and a `Gateway` in the `envoy-router` namespace.
@@ -75,3 +71,12 @@ make docker-build   # build image (IMAGE_REPO / IMAGE_TAG overridable)
 make docker-push
 make upgrade        # helm upgrade after changes
 ```
+
+## Releases
+
+Docker images and Helm charts are published to GHCR on every push to `main` and on `v*` tags.
+
+| Artifact | Location |
+|---|---|
+| Docker image | `ghcr.io/comet-ml/envoy-router` |
+| Helm chart | `oci://ghcr.io/comet-ml/charts/envoy-router` |

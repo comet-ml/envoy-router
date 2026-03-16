@@ -47,7 +47,10 @@ cmd/main.go                   entrypoint; flag parsing, scheme setup, manager in
 internal/controller/
   pod_controller.go           PodReconciler — the only controller
 charts/envoy-router/          Helm chart (operator + GatewayClass + Gateway)
-Dockerfile                    multi-stage: golang:1.22-alpine → distroless/static:nonroot
+.github/workflows/
+  docker.yml                  multi-arch image build → ghcr.io/comet-ml/envoy-router
+  helm.yml                    Helm chart publish → oci://ghcr.io/comet-ml/charts
+Dockerfile                    multi-stage: golang:1.24-alpine → distroless/static:nonroot
 ```
 
 ### Reconciler logic (`PodReconciler`)
@@ -76,22 +79,15 @@ The Service has no selector; the operator manually controls Endpoints so no pod 
 - `gateway.allowedRouteNamespaces` — `All` by default (required when pods span namespaces)
 - `operator.watchNamespace` — scope the operator to a single namespace
 
-### Prerequisites
+## CI/CD
 
-Envoy Gateway must be installed before this chart:
-```bash
-make envoy-gateway-install   # installs into envoy-gateway-system namespace
-```
+Both workflows trigger on `main` push and `v*` tags.
 
-### Making a pod routable
+**docker.yml** — builds `linux/amd64` and `linux/arm64` on native runners in parallel, merges into a multi-arch manifest, attests SBOM (via syft) and build provenance. Publishes to `ghcr.io/comet-ml/envoy-router`.
 
-Add label to the pod:
-```yaml
-labels:
-  envoy-router/enabled: "true"
-```
+**helm.yml** — on `v*` tags, patches `Chart.yaml` version from the git tag, then packages and pushes to `oci://ghcr.io/comet-ml/charts`. On `main` push, publishes with the version already in `Chart.yaml`.
 
-The operator will create `/<pod-name>` as the URL path prefix automatically.
+To release a new version: `git tag vX.Y.Z && git push --tags`
 
 ## Stack
 
