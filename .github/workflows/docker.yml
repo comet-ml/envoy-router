@@ -9,6 +9,7 @@ on:
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ── Build each platform on its native runner in parallel ─────────────────
