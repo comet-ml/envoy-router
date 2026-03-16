@@ -42,3 +42,19 @@ jobs:
           for tgz in /tmp/helm/envoy-router-*.tgz; do
             helm push "$tgz" oci://ghcr.io/${{ github.repository_owner }}/charts
           done
+
+      - name: Summary
+        run: |
+          VERSION=$(grep '^version:' charts/envoy-router/Chart.yaml | awk '{print $2}')
+          REGISTRY="oci://ghcr.io/${{ github.repository_owner }}/charts"
+          echo "## Helm chart published" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Chart** | \`envoy-router\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Version** | \`${VERSION}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Registry** | \`${REGISTRY}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```bash' >> "$GITHUB_STEP_SUMMARY"
+          echo "helm install envoy-router ${REGISTRY}/envoy-router --version ${VERSION}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
