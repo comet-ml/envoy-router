@@ -31,15 +31,13 @@ func main() {
 	var metricsAddr string
 	var probeAddr string
 	var gatewayName string
-	var gatewayNamespace string
 	var servicePort int
 	var podPort int
 	var watchNamespace string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metrics endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&gatewayName, "gateway-name", "envoy-router", "Name of the Gateway resource to attach HTTPRoutes to.")
-	flag.StringVar(&gatewayNamespace, "gateway-namespace", "envoy-router", "Namespace of the Gateway resource.")
+	flag.StringVar(&gatewayName, "gateway-name", "envoy-router", "Name of the Gateway resource to attach HTTPRoutes to. The Gateway is expected to exist in the same namespace as each pod.")
 	flag.IntVar(&servicePort, "service-port", 80, "Port exposed on created Services.")
 	flag.IntVar(&podPort, "pod-port", 8080, "Target port on pods.")
 	flag.StringVar(&watchNamespace, "watch-namespace", "", "Namespace to watch for pods. Empty means all namespaces.")
@@ -73,12 +71,11 @@ func main() {
 	}
 
 	if err = (&controller.PodReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		GatewayName:      gatewayName,
-		GatewayNamespace: gatewayNamespace,
-		ServicePort:      int32(servicePort),
-		PodPort:          int32(podPort),
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		GatewayName: gatewayName,
+		ServicePort: int32(servicePort),
+		PodPort:     int32(podPort),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		os.Exit(1)

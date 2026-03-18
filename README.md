@@ -13,44 +13,54 @@ ALB → Envoy Gateway (1 target group) → HTTPRoute /pp-<id> → pod
 For each pod with `envoy-router/enabled: "true"`, the operator creates:
 - A **Service** (selector-less, same name as the pod)
 - An **EndpointSlice** pointing directly at the pod IP
-- An **HTTPRoute** with path prefix `/<pod-name>`
+- An **HTTPRoute** with path prefix `/<pod-name>` attached to the Gateway in the pod's namespace
 
 Resources are cleaned up automatically when pods are deleted.
 
-## Prerequisites
-
-Envoy Gateway must be installed once per cluster:
-
-```bash
-helm install eg oci://docker.io/envoyproxy/gateway-helm \
-  --version v1.7.1 -n envoy-gateway-system --create-namespace
-```
-
-Envoy Gateway proxy pods always run in `envoy-gateway-system` regardless of where the `Gateway` resource is defined — this is a design decision by the Envoy Gateway project.
-
 ## Install
 
-One `helm install` per namespace. Each install is fully self-contained — operator + Gateway scoped to that namespace, namespace-scoped RBAC only:
+Envoy Gateway is bundled as a Helm dependency — one `helm install` deploys everything: EG controller, Gateway, and the operator.
+
+### Single namespace
 
 ```bash
 helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
-  --version 0.1.2 --namespace ns-1 --create-namespace
+  --version 0.1.3 --namespace ns-1 --create-namespace
 ```
 
-For multiple namespaces, the `GatewayClass` only needs to be created once (it is cluster-scoped). Set `gateway.createClass=false` for subsequent installs:
+### Multiple namespaces
+
+The EG controller and GatewayClass are cluster-scoped singletons — only the first install should create them. Use the bundled `values-secondary.yaml` preset for every subsequent namespace:
 
 ```bash
+# First namespace — installs EG controller + GatewayClass + Gateway + operator
 helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
-  --version 0.1.2 --namespace ns-2 --create-namespace \
-  --set gateway.createClass=false
+  --version 0.1.3 --namespace ns-1 --create-namespace
+
+# Additional namespaces — installs Gateway + operator only
+helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
+  --version 0.1.3 --namespace ns-2 --create-namespace \
+  -f https://raw.githubusercontent.com/comet-ml/envoy-router/main/charts/envoy-router/values-secondary.yaml
 ```
 
+Each namespace gets its own isolated Envoy proxy. The HTTPRoute in each namespace attaches to the Gateway in that same namespace:
+
 ```
-ns-1:  ALB-1 → Gateway (ns-1) → HTTPRoutes for pp-* in ns-1
-ns-2:  ALB-2 → Gateway (ns-2) → HTTPRoutes for pp-* in ns-2
+ns-1:  ALB-1 → Gateway (ns-1) → HTTPRoutes for pods in ns-1
+ns-2:  ALB-2 → Gateway (ns-2) → HTTPRoutes for pods in ns-2
 ```
 
 Each ALB needs one rule: forward `/*` to the Envoy proxy Service for that namespace. No per-pod rules.
+
+### Shared (pre-existing) Envoy Gateway
+
+If you already manage Envoy Gateway separately at the cluster level, disable the bundled install:
+
+```bash
+helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
+  --version 0.1.3 --namespace ns-1 --create-namespace \
+  --set envoy-gateway.enabled=false
+```
 
 ## Making a pod routable
 
@@ -70,10 +80,12 @@ The pod will be reachable at `https://your-domain.com/<pod-name>/` within second
 |---|---|---|
 | `operator.podPort` | `8080` | Port the pods listen on |
 | `operator.servicePort` | `80` | Port exposed on created Services |
+| `operator.watchNamespace` | `""` | Restrict operator to one namespace. Empty = all namespaces |
 | `gateway.create` | `true` | Set `false` to skip Gateway creation |
 | `gateway.createClass` | `true` | Create the GatewayClass (cluster-scoped — set `false` for 2nd+ namespace installs) |
 | `gateway.className` | `envoy-router` | GatewayClass name |
 | `gateway.port` | `80` | Listener port on the Gateway |
+| `envoy-gateway.enabled` | `true` | Install the Envoy Gateway controller. Set `false` for 2nd+ namespace installs or if managing EG separately |
 | `metrics.serviceMonitor.enabled` | `false` | Create a Prometheus ServiceMonitor |
 | `metrics.serviceMonitor.namespace` | release namespace | Namespace to create the ServiceMonitor in |
 | `metrics.serviceMonitor.interval` | `30s` | Prometheus scrape interval |
@@ -101,7 +113,7 @@ helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
 `charts/envoy-router-test` is a self-contained smoke-test chart that installs `envoy-router` as a dependency alongside test pods and an internal ALB Ingress:
 
 ```bash
-# First namespace (creates GatewayClass)
+# First namespace (creates EG controller + GatewayClass)
 helm upgrade --install --namespace envoy-router-test --create-namespace \
   envoy-router-test charts/envoy-router-test
 
@@ -109,6 +121,7 @@ helm upgrade --install --namespace envoy-router-test --create-namespace \
 helm upgrade --install --namespace envoy-router-test-2 --create-namespace \
   --set ingress.host=test-pp-2.dev.comet.com \
   --set envoy-router.gateway.createClass=false \
+  --set envoy-router.envoy-gateway.enabled=false \
   envoy-router-test-2 charts/envoy-router-test
 ```
 

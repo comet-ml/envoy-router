@@ -42,13 +42,15 @@ const (
 // PodReconciler reconciles Pods labelled with envoy-router/enabled=true.
 // For each such pod it maintains a selector-less Service, an EndpointSlice,
 // and an HTTPRoute that maps /<pod-name> to the pod's IP.
+//
+// The HTTPRoute's ParentReference always points to a Gateway in the same
+// namespace as the pod, enabling one isolated Gateway per namespace.
 type PodReconciler struct {
 	client.Client
-	Scheme           *runtime.Scheme
-	GatewayName      string
-	GatewayNamespace string
-	ServicePort      int32
-	PodPort          int32
+	Scheme      *runtime.Scheme
+	GatewayName string
+	ServicePort int32
+	PodPort     int32
 }
 
 func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -204,7 +206,7 @@ func (r *PodReconciler) ensureEndpointSlice(ctx context.Context, pod *corev1.Pod
 func (r *PodReconciler) ensureHTTPRoute(ctx context.Context, pod *corev1.Pod) error {
 	pathPrefix := "/" + pod.Name
 	pathType := gatewayv1.PathMatchPathPrefix
-	gwNamespace := gatewayv1.Namespace(r.GatewayNamespace)
+	gwNamespace := gatewayv1.Namespace(pod.Namespace)
 	port := gatewayv1.PortNumber(r.ServicePort)
 	weight := int32(1)
 

@@ -25,6 +25,35 @@ operator:
   gatewayName: envoy-router
   servicePort: 80
   podPort: 8080
+  # watchNamespace restricts the operator to a single namespace.
+  # Empty (default) watches all namespaces; set to the release namespace for
+  # a single-namespace isolated deployment.
+  watchNamespace: ""
+
+# Envoy Gateway sub-chart — installs the EG controller alongside the operator.
+# Set enabled: false if you manage Envoy Gateway separately (e.g. a shared cluster-wide install).
+envoy-gateway:
+  enabled: true
+  createNamespace: false
+  config:
+    envoyGateway:
+      gateway:
+        # Must match the controllerName in the GatewayClass created by this chart.
+        controllerName: gateway.envoyproxy.io/gatewayclass-controller
+      provider:
+        type: Kubernetes
+      logging:
+        level:
+          default: info
+  deployment:
+    replicas: 1
+    envoyGateway:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1024Mi
 
 metrics:
   serviceMonitor:

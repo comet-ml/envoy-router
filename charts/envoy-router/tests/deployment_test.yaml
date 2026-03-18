@@ -15,7 +15,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/comet-ml/envoy-router:0.1.0
+          value: ghcr.io/comet-ml/envoy-router:latest
 
   - it: uses custom image tag when set
     set:
@@ -25,13 +25,21 @@ tests:
           path: spec.template.spec.containers[0].image
           value: ghcr.io/comet-ml/envoy-router:v1.2.3
 
-  - it: sets --gateway-namespace to release namespace
+  - it: does not set --gateway-namespace arg
     asserts:
-      - contains:
+      - notContains:
           path: spec.template.spec.containers[0].args
           content: --gateway-namespace=test-ns
 
-  - it: sets --watch-namespace to release namespace
+  - it: omits --watch-namespace when operator.watchNamespace is empty
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --watch-namespace=
+
+  - it: sets --watch-namespace when operator.watchNamespace is set
+    set:
+      operator.watchNamespace: test-ns
     asserts:
       - contains:
           path: spec.template.spec.containers[0].args

@@ -25,10 +25,11 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
         - --gateway-name={{ .Values.operator.gatewayName }}
-        - --gateway-namespace={{ .Release.Namespace }}
         - --service-port={{ .Values.operator.servicePort }}
         - --pod-port={{ .Values.operator.podPort }}
-        - --watch-namespace={{ .Release.Namespace }}
+        {{- if .Values.operator.watchNamespace }}
+        - --watch-namespace={{ .Values.operator.watchNamespace }}
+        {{- end }}
         ports:
         - name: metrics
           containerPort: 8080

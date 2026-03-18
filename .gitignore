@@ -24,3 +24,4 @@ dist/
 # Helm - generated dependency artifacts
 charts/envoy-router-test/charts/
 charts/envoy-router-test/Chart.lock
+charts/envoy-router/charts/*.tgz

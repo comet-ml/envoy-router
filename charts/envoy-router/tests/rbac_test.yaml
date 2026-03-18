@@ -3,39 +3,37 @@ release:
   namespace: test-ns
 
 tests:
-  - it: Role is namespace-scoped (not ClusterRole)
+  - it: Role is cluster-scoped (ClusterRole)
     template: templates/role.yaml
     asserts:
       - isKind:
-          of: Role
-      - equal:
+          of: ClusterRole
+      - notExists:
           path: metadata.namespace
-          value: test-ns
 
-  - it: RoleBinding is namespace-scoped (not ClusterRoleBinding)
+  - it: RoleBinding is cluster-scoped (ClusterRoleBinding)
     template: templates/rolebinding.yaml
     asserts:
       - isKind:
-          of: RoleBinding
-      - equal:
+          of: ClusterRoleBinding
+      - notExists:
           path: metadata.namespace
-          value: test-ns
 
-  - it: RoleBinding references Role not ClusterRole
+  - it: ClusterRoleBinding references ClusterRole
     template: templates/rolebinding.yaml
     asserts:
       - equal:
           path: roleRef.kind
-          value: Role
+          value: ClusterRole
 
-  - it: RoleBinding subject namespace matches release namespace
+  - it: ClusterRoleBinding subject namespace matches release namespace
     template: templates/rolebinding.yaml
     asserts:
       - equal:
           path: subjects[0].namespace
           value: test-ns
 
-  - it: Role grants required verbs on pods
+  - it: ClusterRole grants required verbs on pods
     template: templates/role.yaml
     asserts:
       - contains:
@@ -45,7 +43,7 @@ tests:
             resources: ["pods"]
             verbs: ["get", "list", "watch", "update", "patch"]
 
-  - it: Role grants full CRUD on httproutes
+  - it: ClusterRole grants full CRUD on httproutes
     template: templates/role.yaml
     asserts:
       - contains:
@@ -55,7 +53,7 @@ tests:
             resources: ["httproutes"]
             verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  - it: Role grants full CRUD on services
+  - it: ClusterRole grants full CRUD on services
     template: templates/role.yaml
     asserts:
       - contains:
@@ -65,7 +63,7 @@ tests:
             resources: ["services"]
             verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  - it: Role grants full CRUD on endpointslices
+  - it: ClusterRole grants full CRUD on endpointslices
     template: templates/role.yaml
     asserts:
       - contains:

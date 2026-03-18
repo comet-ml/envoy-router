@@ -1,0 +1,18 @@
+# values-secondary.yaml — use this for every namespace after the first install.
+#
+# The Envoy Gateway controller and GatewayClass are cluster-scoped singletons;
+# only the first (primary) install should create them.  Subsequent installs in
+# other namespaces only need a per-namespace Gateway and operator instance.
+#
+# Usage:
+#   helm install envoy-router oci://ghcr.io/comet-ml/charts/envoy-router \
+#     -n <namespace> --create-namespace \
+#     -f values-secondary.yaml
+
+# Skip the EG controller — already running from the primary install.
+envoy-gateway:
+  enabled: false
+
+gateway:
+  # GatewayClass is cluster-scoped; already created by the primary install.
+  createClass: false
